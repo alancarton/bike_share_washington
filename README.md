@@ -1,23 +1,28 @@
-# bike_share_washington
+## Bike Share Washington
+## ===================
 
-The objective is to rewrite the Bike Sharing analysis done in the Python for Statistical Programming subject using Dask data structures and ecosystem instead of plain pandas.
+The objective is to rewrite the Bike Sharing analysis using Dask data structures and ecosystem instead of plain pandas wherever possible.
 
-The reasons for choosing this are:
+Initial data was to be downloaded programmatically from Kaggle and imported into Dask dataframes, and the resulting zip and csv files are excluded from git repository
 
-The dataset is comparatively small, and the extra computing time is given by feature engineeering and model selection, which lowers the risk
-Everybody has performed this analysis and is relatively familiar with it, which makes it easier than carrying a data science project from scratch, given the time constraints
-Rewriting an existing analysis to make it more performant is more aligned with the objectives of the subject and reflects more real world escenarios
+Some models were not available or caused issues when using Dask dataframes or Pandas dataframes, so where not possible, the sklearn models were employed using Dask : joblib.parallel_backend('dask')
 
-The "business objectives" are more clear than in the group assignment
+Data Cleansing and Feature Engineering was conducted using Dask.
+Where models or functions would not use Dask Dataframe, .compute() was employed but not stored as a memory object.  Was particularly required for calculation of r^2 and accuracy.
 
-Creation of a git repository with a proper README, incremental commits, and some sort of automatic or programmatic download of the data before the analysis (1 point). Notice that the data should not be checked out in the repository. Including data files in git repositories is considered a bad practice.
-Use of dask.dataframe and distributed.Client for all the data manipulation (2 points). Remember that calling .compute() in a Dask DataFrame turns it into a pandas dataframe, which resides in RAM and loses the distributed advantages. The more Dask structures are used, the higher the grade.
+Either DASK_ML models were used, or joblib.parallel_backend('dask') for backend tasks.
+Although dask-searchcv was recommended for replacement of GridSearchCV from sklearn, the module would not import due to issues with recent versions of sklearn.  sklearn had to be downloaded to version 0.20.3
 
-Use of Dask-ML for distributed training and model selection https://ml.dask.org/ (1 point). See below for inspiration.
-Useful links:
+Using Grid Search with XGBoost from dask caused an error - AttributeError: 'DataFrame' object has no attribute 'to_delayed'
+On investigation it was suggested that it was not ready to work with Dask DataFrames (as suggested in the error) so the Dask GridSearch was run with sklearn XGBoost (which worked with fit but not with predict. Stated there was a mismatch with features - columns missing from test dataset).  This did not make sense, as test was subset of the full dataset, as was train, split after feature engineering so all columns should match.
 
-Putting everything in a pipeline https://tomaugspurger.github.io/scalable-ml-01.html
-Why Dask-ML is faster than sklearn GridSearchCV for model selection https://jcrist.github.io/introducing-dask-searchcv.html
+The sklearn GridSearchCV was tried with dask XGBoost using dask joblib.parallel_backend, which worked even given above error from the dask cross validation/sklearn xgboost, so that method was continued through the rest of the exercise.
 
-JupyterHub on Hadoop https://jcrist.github.io/jupyterhub-on-hadoop/index.html
-As you can see, the assignment is more open ended. Use this as a opportunity to explore, and don't be afraid of recording failed experiments in the notebook, if they are properly explained and described.
+### Combined Methods
+
+A combination was also tried using an ensemble of sklearn with RandomForestClassifier, GradientBoostingClassifier and ExtraTreesClassifier and run with Cross Validation Score from sklearn, usng the joblib.parallel_backend('dask') to use Dask, involving .compute() where necessary.
+
+### Pipelines
+
+Pipelines were also used in the code, but I could not find anything regarding SVC with Dask, and pipelines were suggested to use the sklearn version.  Again I involved GridsearchCV so sklearn SVC and StandardScalar were used with the sklearn GridSearchCV from sklearn, using the joblib.parallel_backend('dask') to use Dask, involving .compute() where necessary.
+
